@@ -1,0 +1,1 @@
+PIP package which is an OpenAI Gym environment that simulates a Rubik's Cube.
