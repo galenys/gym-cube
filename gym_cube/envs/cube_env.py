@@ -77,9 +77,8 @@ class CubeEnv(gym.Env):
         obs = self.cube.machine_output()
         reward = self._get_reward()
         done = (
-            self.cube.boxes == solved_cube or
-            # stop after 100,000 steps
-            self.current_step >= 1e5
+            reward == 5 * 6
+            # or self.current_step >= 1e5
         )
         
         return obs, reward, done, {}
@@ -89,7 +88,7 @@ class CubeEnv(gym.Env):
         self.cube.reset()
 
     def render(self):
-        # temporary
+        # temporary render, eventually 3D display
         print(self.cube.machine_output())
 
     def _get_reward(self):
