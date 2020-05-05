@@ -1,133 +1,105 @@
-import copy
+import gym
+from gym import spaces
 
-class Box:
-    def __init__(self):
-        self.top = 'none'
-        self.bottom = 'none'
-        self.right = 'none'
-        self.left = 'none'
-        self.front = 'none'
-        self.back = 'none'
+import numpy as np
+import cube
 
-class Cube:
-    def __init__(self):
-        self.reset()
+solved_cube = Cube().boxes
 
-    def reset():
-        self.boxes = [[[Box() for i in range(3)] for i in range(3)] for i in range(3)]
+class CubeEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
 
-        for z in range(3):
-            for y in range(3):
-                for x in range(3):
-                    if z == 0:
-                        self.boxes[z][y][x].front = 'white'
-                    if z == 2:
-                        self.boxes[z][y][x].back = 'yellow'
-                    
-                    if y == 0:
-                        self.boxes[z][y][x].top = 'red'
-                    if y == 2:
-                        self.boxes[z][y][x].bottom = 'orange'
+    def __init__(self, cube):
+        super(CubeEnv, self).__init__()
 
-                    if x == 0:
-                        self.boxes[z][y][x].left = 'blue'
-                    if x == 2:
-                        self.boxes[z][y][x].right = 'green'
+        self.cube = cube
+        cube.scramble(n = 20)
+        self.current_step = 0
 
-    # ROTATION METHODS
-    def rot_z(self, layer):
-        new_state = copy.deepcopy(self.boxes)
-        for y in range(3):
-            for x in range(3):
-                target = self.boxes[layer][2-x][y]
+        # F, B, T, D, R, L and counterparts
+        self.action_space = spaces.Discrete(12)
 
-                new_state[layer][y][x].top = target.left
-                new_state[layer][y][x].right = target.top
-                new_state[layer][y][x].bottom = target.right
-                new_state[layer][y][x].left = target.bottom
-        self.boxes = new_state
-
-    def rot_y(self, layer):
-        new_state = copy.deepcopy(self.boxes)
-        for z in range(3):
-            for x in range(3):
-                target = self.boxes[x][layer][2-z]
-
-                new_state[z][layer][x].front = target.right
-                new_state[z][layer][x].left = target.front
-                new_state[z][layer][x].back = target.left
-                new_state[z][layer][x].right = target.back
-        self.boxes = new_state
-
-    def rot_x(self, layer):
-        new_state = copy.deepcopy(self.boxes)
-        for z in range(3):
-            for y in range(3):
-                target = self.boxes[y][2-z][layer]
-
-                new_state[z][y][layer].top = target.front
-                new_state[z][y][layer].back = target.top
-                new_state[z][y][layer].bottom = target.back
-                new_state[z][y][layer].front = target.bottom
-        self.boxes = new_state
-    # END ROTATION METHODS
+        # 3X3 blocks per face * 6 faces, 6 possible colors
+        # faces are in order F, B, T, D, R, L
+        observation_low = np.zeros([3, 18])
+        observation_high = np.ones([3, 18]) * 5
+        self.observation_space = spaces.Box(observation_low, 
+                                            observation_high)
     
-    # FACE METHODS
-    def print_front(self):
-        z = 0
-        for y in range(3):
-            for x in range(3):
-                print(cube.boxes[z][y][x].front, end=" ")
-            print("")
-    def print_back(self):
-        z = 2
-        for y in range(3):
-            for x in range(3):
-                print(cube.boxes[z][y][x].back, end=" ")
-            print("")
-    def print_top(self):
-        y = 0
-        for z in range(3):
-            for x in range(3):
-                print(cube.boxes[z][y][x].top, end=" ")
-            print("")
-    def print_bottom(self):
-        y = 2
-        for z in range(3):
-            for x in range(3):
-                print(cube.boxes[z][y][x].bottom, end=" ")
-            print("")
-    def print_left(self):
-        x = 0
-        for y in range(3):
-            for z in range(3):
-                print(cube.boxes[z][y][x].left, end=" ")
-            print("")
-    def print_right(self):
-        x = 2
-        for y in range(3):
-            for z in range(3):
-                print(cube.boxes[z][y][x].right, end=" ")
-            print("")
-    # END FACE METHODS
+    def step(self, action):
+        self.current_step += 1
 
+        # F
+        if action == 0:
+            self.cube.rot_z(layer=0)
+        # F'
+        elif action == 1:
+            for i in range(3):
+                self.cube.rot_z(layer=0)
+        # B
+        elif action == 2:
+            for i in range(3):
+                self.cube.rot_z(layer=2)
+        # B'
+        elif action == 3:
+            self.cube.rot_z(layer=2)
+        
+        # T
+        elif action == 4:
+            self.cube.rot_y(layer=0)
+        # T'
+        elif action == 5:
+            for i in range(3):
+                self.cube.rot_y(layer=0)
+        # D
+        elif action == 6:
+            for i in range(3):
+                self.cube.rot_z(layer=2)
+        # D'
+        elif action == 7:
+            self.cube.rot_z(layer=2)
+        
+        # R
+        elif action == 8:
+            self.cube.rot_x(layer=2)
+        # R'
+        elif action == 9:
+            for i in range(3):
+                self.cube.rot_x(layer=2)
+        # L
+        elif action == 10:
+            for i in range(3):
+                self.cube.rot_x(layer=0)
+        # L'
+        elif action == 11:
+            self.cube.rot_x(layer=0)
 
-cube = Cube()
-# r
-cube.rot_x(layer=2)
+        obs = self.cube.machine_output()
+        reward = self._get_reward()
+        done = (
+            self.cube.boxes == solved_cube or
+            # stop after 100,000 steps
+            self.current_step >= 1e5
+        )
+        
+        return obs, reward, done, {}
 
+    def reset(self):
+        self.current_step = 0
+        self.cube.reset()
 
-print("FRONT")
-cube.print_front()
-print("BACK")
-cube.print_back()
+    def render(self):
+        # temporary
+        print(self.cube.machine_output())
 
-print("TOP")
-cube.print_top()
-print("BOTTOM")
-cube.print_bottom()
-
-print("LEFT")
-cube.print_left()
-print("RIGHT")
-cube.print_right()
+    def _get_reward(self):
+        # 5 points for each solved face
+        reward = 5 * (
+            np.unique(self.cube.front_face).size +
+            np.unique(self.cube.back_face).size +
+            np.unique(self.cube.top_face).size +
+            np.unique(self.cube.bottom_face).size +
+            np.unique(self.cube.right_face).size +
+            np.unique(self.cube.left_face).size
+        )
+        return reward
