@@ -111,42 +111,42 @@ class Cube:
         z = 0
         for y in range(3):
             for x in range(3):
-                face[y][x] = COLOR_DICT[cube.boxes[z][y][x].front]
+                face[y][x] = COLOR_DICT[self.boxes[z][y][x].front]
         return face
     def back_face(self):
         face = np.zeros([3, 3])
         z = 2
         for y in range(3):
             for x in range(3):
-                face[y][x] = COLOR_DICT[cube.boxes[z][y][x].back]
+                face[y][x] = COLOR_DICT[self.boxes[z][y][x].back]
         return face
     def top_face(self):
         face = np.zeros([3, 3])
         y = 0
         for z in range(3):
             for x in range(3):
-                face[z][x] = COLOR_DICT[cube.boxes[z][y][x].top]
+                face[z][x] = COLOR_DICT[self.boxes[z][y][x].top]
         return face
     def bottom_face(self):
         face = np.zeros([3, 3])
         y = 2
         for z in range(3):
             for x in range(3):
-                face[z][x] = COLOR_DICT[cube.boxes[z][y][x].bottom]
+                face[z][x] = COLOR_DICT[self.boxes[z][y][x].bottom]
         return face
     def right_face(self):
         face = np.zeros([3, 3])
         x = 2
         for y in range(3):
             for z in range(3):
-                face[y][z] = COLOR_DICT[cube.boxes[z][y][x].right]
+                face[y][z] = COLOR_DICT[self.boxes[z][y][x].right]
         return face
     def left_face(self):
         face = np.zeros([3, 3])
         x = 0
         for y in range(3):
             for z in range(3):
-                face[y][z] = COLOR_DICT[cube.boxes[z][y][x].left]
+                face[y][z] = COLOR_DICT[self.boxes[z][y][x].left]
         return face
     
     def machine_output(self):
@@ -160,14 +160,17 @@ class Cube:
         ), axis=1)
     # END OUT METHODS
 
+
+
+
 class CubeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, cube):
+    def __init__(self):
         super(CubeEnv, self).__init__()
 
-        self.cube = cube
-        cube.scramble(n = 20)
+        self.cube = Cube()
+        self.cube.scramble(n = 20)
         self.current_step = 0
 
         # F, B, T, D, R, L and counterparts
@@ -243,6 +246,7 @@ class CubeEnv(gym.Env):
 
     def render(self):
         # temporary render, eventually 3D display
+        print("MACHINE OUTPUT")
         print(self.cube.machine_output())
 
     def _get_reward(self):
