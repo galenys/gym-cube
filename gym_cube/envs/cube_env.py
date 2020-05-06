@@ -4,8 +4,6 @@ from gym import spaces
 import numpy as np
 import cube
 
-solved_cube = Cube().boxes
-
 class CubeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -94,11 +92,11 @@ class CubeEnv(gym.Env):
     def _get_reward(self):
         # 5 points for each solved face
         reward = 5 * (
-            np.unique(self.cube.front_face).size +
-            np.unique(self.cube.back_face).size +
-            np.unique(self.cube.top_face).size +
-            np.unique(self.cube.bottom_face).size +
-            np.unique(self.cube.right_face).size +
-            np.unique(self.cube.left_face).size
+            np.unique(self.cube.front_face()).size == 1 +
+            np.unique(self.cube.back_face()).size == 1 +
+            np.unique(self.cube.top_face()).size == 1 +
+            np.unique(self.cube.bottom_face()).size == 1 +
+            np.unique(self.cube.right_face()).size == 1 +
+            np.unique(self.cube.left_face()).size == 1
         )
         return reward
